@@ -8,10 +8,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.upgrad.upstac.config.security.UserLoggedInService;
 import org.upgrad.upstac.exception.AppException;
+import org.upgrad.upstac.testrequests.RequestStatus;
 import org.upgrad.upstac.testrequests.TestRequest;
 import org.upgrad.upstac.testrequests.TestRequestQueryService;
 import org.upgrad.upstac.testrequests.TestRequestUpdateService;
 import org.upgrad.upstac.testrequests.flow.TestRequestFlowService;
+import org.upgrad.upstac.users.User;
 
 import javax.validation.ConstraintViolationException;
 import java.util.List;
@@ -47,11 +49,11 @@ public class ConsultationController {
     @GetMapping("/in-queue")
     @PreAuthorize("hasAnyRole('DOCTOR')")
     public List<TestRequest> getForConsultations()  {
-        //Implement this method to get the list of test requests having status as 'LAB_TEST_COMPLETED'
-        // make use of the findBy() method from testRequestQueryService class
-        //return the result
+        //Implement this method to get the list of test requests having status as 'LAB_TEST_COMPLETED' 
         // For reference check the method requestHistory() method from TestRequestController class
-        return null; // replace this line with your code
+         // make use of the findBy() method from testRequestQueryService class
+        //return the result
+        return testRequestQueryService.findBy(RequestStatus.LAB_TEST_COMPLETED);
 
     }
 
@@ -61,10 +63,10 @@ public class ConsultationController {
 
         // Create an object of User class and store the current logged in user first
         //Implement this method to return the list of test requests assigned to current doctor(make use of the above created User object)
-        //Make use of the findByDoctor() method from testRequestQueryService class to get the list
         // For reference check the method getPendingTests() method from TestRequestController class
-
-        return null; // replace this line with your code
+        User user = userLoggedInService.getLoggedInUser();
+        //Make use of the findByDoctor() method from testRequestQueryService class to get the list
+        return testRequestQueryService.findByDoctor(user); 
 
 
 
@@ -76,12 +78,16 @@ public class ConsultationController {
     @PutMapping("/assign/{id}")
     public TestRequest assignForConsultation(@PathVariable Long id) {
         // Implement this method to assign a particular test request to the current doctor(logged in user)
-        //Create an object of User class and get the current logged in user
-        //Create an object of TestRequest class and use the assignForConsultation() method of testRequestUpdateService to assign the particular id to the current user
-        // return the above created object
+        // added AppException handler throw bad request
         // Refer to the method createRequest() from the TestRequestController class
         try {
-            return null; // replace this line of code with your implementation
+        //Create an object of User class and get the current logged in user
+            User user = userLoggedInService.getLoggedInUser();
+        //Create an object of TestRequest class and use the assignForConsultation() method of testRequestUpdateService to assign the particular id to the current user
+            TestRequest testRequest = new TestRequest();
+            testRequest = testRequestUpdateService.assignForConsultation(id, user);
+        // return the above created object
+            return testRequest;
         }catch (AppException e) {
             throw asBadRequest(e.getMessage());
         }
@@ -93,12 +99,16 @@ public class ConsultationController {
     @PutMapping("/update/{id}")
     public TestRequest updateConsultation(@PathVariable Long id,@RequestBody CreateConsultationRequest testResult) {
         // Implement this method to update the result of the current test request id with test doctor comments
-        // Create an object of the User class to get the logged in user
-        // Create an object of TestResult class and make use of updateConsultation() method from testRequestUpdateService class
-        //to update the current test request id with the testResult details by the current user(object created)
+        // added AppException handler throw bad request 
 
         try {
-            return null; // replace this line of code with your implementation
+        // Create an object of the User class to get the logged in user
+            User user = userLoggedInService.getLoggedInUser();
+        // Create an object of TestResult class and make use of updateConsultation() method from testRequestUpdateService class
+            TestRequest testRequest = new TestRequest();
+        //to update the current test request id with the testResult details by the current user(object created)
+            testRequest = testRequestUpdateService.updateConsultation(id, testResult, user);
+            return testRequest;
 
         } catch (ConstraintViolationException e) {
             throw asConstraintViolation(e);
@@ -106,7 +116,5 @@ public class ConsultationController {
             throw asBadRequest(e.getMessage());
         }
     }
-
-
 
 }
